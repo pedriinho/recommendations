@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minha Loja</title>
+  <!-- Link do Bootstrap -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+  <div class="container mt-5">
+    <h1>Minha Loja</h1>
+
+    <!-- Produtos -->
+    <div class="row mt-4" id="produtos">
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Item 1</h5>
+            <button class="btn btn-primary" onclick="adicionarAoCarrinho('Item 1')">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Item 2</h5>
+            <button class="btn btn-primary" onclick="adicionarAoCarrinho('Item 2')">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Item 3</h5>
+            <button class="btn btn-primary" onclick="adicionarAoCarrinho('Item 3')">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Item 4</h5>
+            <button class="btn btn-primary" onclick="adicionarAoCarrinho('Item 4')">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Item 5</h5>
+            <button class="btn btn-primary" onclick="adicionarAoCarrinho('Item 5')">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carrinho de Compras -->
+    <div class="row mt-5" id="carrinho">
+      <div class="col-md-12">
+        <h3>Carrinho de Compras</h3>
+        <ul class="list-group" id="lista-carrinho">
+          <!-- Itens do carrinho -->
+        </ul>
+        <button class="btn btn-success mt-3" onclick="comprar()">Comprar</button>
+        <button class="btn btn-danger mt-3" onclick="limparCarrinho()">Limpar Carrinho</button>
+      </div>
+    </div>
+
+    <!-- Recomendações -->
+    <div class="row mt-5" id="recomendacoes">
+      <div class="col-md-12">
+        <h3>Recomendações</h3>
+        <ul class="list-group" id="lista-recomendacoes">
+          <!-- Recomendações -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Função para adicionar um item ao carrinho
+    function adicionarAoCarrinho(item) {
+      let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+      carrinho.push(item);
+      localStorage.setItem('carrinho', JSON.stringify(carrinho));
+      atualizarCarrinho();
+    //   obterRecomendacoes(item);
+    }
+
+    // Função para remover um item do carrinho
+    function removerDoCarrinho(index) {
+      let carrinho = JSON.parse(localStorage.getItem('carrinho'));
+      carrinho.splice(index, 1);
+      localStorage.setItem('carrinho', JSON.stringify(carrinho));
+      atualizarCarrinho();
+    }
+
+    // Função para atualizar o carrinho na página
+    function atualizarCarrinho() {
+      let carrinho = JSON.parse(localStorage.getItem('carrinho'));
+      let listaCarrinho = document.getElementById('lista-carrinho');
+
+      // Limpa a lista de itens do carrinho
+      listaCarrinho.innerHTML = '';
+
+      // Adiciona os itens ao carrinho
+      if (carrinho) {
+        carrinho.forEach((item, index) => {
+          let li = document.createElement('li');
+          li.className = 'list-group-item';
+          li.innerText = item;
+          let button = document.createElement('button');
+          button.className = 'btn btn-sm btn-danger float-right';
+          button.innerText = 'Remover';
+          button.onclick = () => removerDoCarrinho(index);
+          li.appendChild(button);
+          listaCarrinho.appendChild(li);
+        });
+      }
+    }
+
+    // Função para limpar o carrinho
+    function limparCarrinho() {
+      localStorage.removeItem('carrinho');
+      atualizarCarrinho();
+    }
+    
+    function getCookie(name){
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
+
+        if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    function comprar() {
+        let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+        console.log(JSON.stringify({'items': carrinho}))
+        fetch('http://localhost:8000/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({'items': carrinho})
+        })
+        // .then(response => response.json())
+        // .then(data => {
+        //     console.log(data.message);
+        //     // Limpar o carrinho local após a compra
+        //     localStorage.removeItem('carrinho');
+        //     atualizarCarrinho();
+        // })
+        .catch(error => {
+            console.error('Erro na compra:', error);
+        });
+    }
+    // Função para enviar os dados do carrinho para o servidor Python e obter recomendações
+    function obterRecomendacoes(item) {
+      let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+      fetch('http://localhost:5000/recommend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ selected_items: carrinho })
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log('Recomendações:', data);
+          let listaRecomendacoes = document.getElementById('lista-recomendacoes');
+          listaRecomendacoes.innerHTML = '';
+
+          // Adiciona as recomendações na lista
+          data.recommendations.forEach(item => {
+            let li = document.createElement('li');
+            li.className = 'list-group-item';
+            li.innerText = item;
+            listaRecomendacoes.appendChild(li);
+          });
+        })
+        .catch(error => {
+          console.error('Erro na obtenção das recomendações:', error);
+        });
+    }
+
+    // Carrega o carrinho ao carregar a página
+    window.onload = function () {
+      atualizarCarrinho();
+    };
+  </script>
+</body>
+
+</html>
